@@ -2,7 +2,8 @@ const passport = require("passport")
 const jwt = require("jsonwebtoken")
 const dev = process.env.NODE_ENV !== "production"
 const httpStatus = require('http-status')
-const ms = require('ms')
+const ApiError =require('../utils/ApiError')
+
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -11,7 +12,7 @@ const COOKIE_OPTIONS = {
   secure: !dev,
   signed: true,
   secret:process.env.JWT_SECRET,
-  maxAge:30*86400,
+  maxAge:60*60*24*30*1000,
   sameSite:"lax",
 }
 
@@ -20,7 +21,7 @@ const COOKIE_OPTIONS = {
 const getAccessToken = user => {
   return jwt.sign(user, process.env.JWT_SECRET, {
     
-   expiresIn:process.env.JWT_ACCESS_EXPIRATION_MINUTES
+   expiresIn:eval(process.env.JWT_ACCESS_EXPIRATION_MINUTES)
    
   })
 }
@@ -28,21 +29,33 @@ const getAccessToken = user => {
 const getRefreshToken = user => {
   const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {
  
-    expiresIn:process.env.JWT_REFRESH_EXPIRATION_DAYS
+    expiresIn:eval(process.env.JWT_REFRESH_EXPIRATION_DAYS)
     
   })
   return refreshToken
 }
 
-const verifyUser = async(req,res,next)=>{
+
+var verifyUser = function (req, res, next) {
+   passport.authenticate('jwt',{session:true},(err,user,info)=>{
+ 
+    if(err) return next(new ApiError(httpStatus.UNAUTHORIZED, err));
+    if(!user) return next(new ApiError(httpStatus.UNAUTHORIZED, "Session expired please login again"));
+    req.user = user
+    return next()
+   })(req,res,next)
+}
+
+/* const verifyUser = async(req,res,next)=>{
   return new Promise((resolve,reject)=>{
     passport.authenticate('jwt',{session:false},(err,user,info)=>{
   if(err) return reject({statusCode:httpStatus.UNAUTHORIZED,message:err})
   if(!user) return reject({statusCode:httpStatus.UNAUTHORIZED,message:"Session expired please login again"})
- return  resolve(user)
+ 
+  return  resolve(user)
   })(req,res,next)
   })
-}
+} */
 
 module.exports  ={COOKIE_OPTIONS,
 getAccessToken,

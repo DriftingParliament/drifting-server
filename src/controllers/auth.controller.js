@@ -1,12 +1,12 @@
 const httpStatus = require('http-status');
 const jwt = require("jsonwebtoken")
 const catchAsync = require('../utils/catchAsync');
-const { authService, userService, tokenService, emailService } = require('../services');
+const { authService,  tokenService, emailService } = require('../services');
 
 
 const ApiError =require('../utils/ApiError')
 
-const {getAccessToken, COOKIE_OPTIONS, getRefreshToken,verifyUser} = tokenService
+const { COOKIE_OPTIONS} = tokenService
 
 const register = catchAsync(async (req, res,next) => {  
     try {
@@ -46,13 +46,13 @@ const logout = catchAsync(async (req, res,next) => {
 
 const refreshTokens = catchAsync(async (req, res,next) => {
      const { signedCookies = {} } = req
-     console.log('signedCookies',signedCookies)
      const { refreshToken } = signedCookies
-     console.log('refreshToken',refreshToken)
+    // console.log('signedCookies',signedCookies)
+     //console.log('refreshToken',refreshToken)
      if(refreshToken){
         try {
             const response = await authService.refreshAuth(refreshToken)
-            console.log('response',response)
+           // console.log('response',response)
             res.cookie("refreshToken", response.newRefreshToken, COOKIE_OPTIONS)
             return res.status(httpStatus.OK).send({success:true,token:response.accessToken,role:response.userData.role})
             }
@@ -93,6 +93,8 @@ const sendTestEmail = catchAsync(async(req,res)=>{
     res.status(httpStatus.NO_CONTENT).send();
 })
 
+
+
 module.exports = {
     register,
     login,
@@ -103,4 +105,5 @@ module.exports = {
     //sendVerificationEmail,
     verifyEmail,
     sendTestEmail,
+
 };

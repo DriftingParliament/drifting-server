@@ -56,6 +56,7 @@ app.options('*', cors());
 
 // for jwt authentication
 app.use(passport.initialize());
+app.use(passport.session());
 //passport.use('jwt', jwtStrategy);
  
 

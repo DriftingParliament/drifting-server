@@ -101,7 +101,7 @@ const refreshAuth = async (refreshToken) => {
               return reject({statusCode:httpStatus.NOT_FOUND,message:"Token Not Found"})
             } 
             const accessToken = getAccessToken({ _id: userId })
-            console.log("accessToken",accessToken);
+            
             // If the refresh token exists, then create new one and replace it.
             const newRefreshToken = getRefreshToken({ _id: userId })
             user.refreshToken[tokenIndex] = { refreshToken: newRefreshToken }
@@ -148,10 +148,6 @@ const verifyEmail = async (verifyEmailToken) => {
         throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
     }
 };
-
-const isAdmin = async(user) =>{
-    
-}
 
 module.exports = {
     passportAuthenticationPromise,
