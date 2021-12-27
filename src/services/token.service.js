@@ -20,7 +20,6 @@ const COOKIE_OPTIONS = {
 
 const getAccessToken = user => {
   return jwt.sign(user, process.env.JWT_SECRET, {
-    
    expiresIn:eval(process.env.JWT_ACCESS_EXPIRATION_MINUTES)
    
   })
@@ -46,20 +45,42 @@ var verifyUser = function (req, res, next) {
    })(req,res,next)
 }
 
-/* const verifyUser = async(req,res,next)=>{
-  return new Promise((resolve,reject)=>{
-    passport.authenticate('jwt',{session:false},(err,user,info)=>{
-  if(err) return reject({statusCode:httpStatus.UNAUTHORIZED,message:err})
-  if(!user) return reject({statusCode:httpStatus.UNAUTHORIZED,message:"Session expired please login again"})
- 
-  return  resolve(user)
-  })(req,res,next)
-  })
-} */
+var generateZoomToken =()=>{
+  console.log("Generating Zoom Token")
+  const payload = {
+              iss:  process.env.ZOOM_JWT_API_KEY,
+              exp: new Date().getTime() + 5000,
+              };
+  const token = jwt.sign(payload, process.env.ZOOM_JWT_API_SECRET); 
+  return token
+}
+var verifyZoomToken = (req,res,next)=>{
+  const { signedCookies = {} } = req
+  let { zoomToken } = signedCookies
+   if(!zoomToken){
+      zoomToken= generateZoomToken()
+      res.cookie("zoomToken",zoomToken,COOKIE_OPTIONS)
+      req.zoomToken=zoomToken
+next()
+   }
+   else{
+     try {
+  var decoded = jwt.verify(zoomToken,process.env.ZOOM_JWT_API_SECRET);
+    if(decoded){
+       next()
+    }
+} catch(err) {
+  if(err) return next(new ApiError(httpStatus.UNAUTHORIZED, err));
+}
+   }
+
+(req,res,next)
+}
 
 module.exports  ={COOKIE_OPTIONS,
 getAccessToken,
 getRefreshToken,
 verifyUser,
-
+generateZoomToken,
+verifyZoomToken
 }
