@@ -15,14 +15,13 @@ console.log("Creating Appointment")
         const saveData ={
             studentID:user._id,
             meetID:zoomMeetID,
-            paymentID:paymentID,
             ...appointmentData
         }
         console.log("saveData",saveData)
         try {
-            const appointmentData = await Appointment.create(saveData)
+            const newAppointment = await Appointment.create(saveData)
             
-             return resolve({success:true,appointmentData})
+             return resolve(newAppointment)
         } catch (err) {
              if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
         }
@@ -41,10 +40,40 @@ const patchAppointment = async(appointmentID,updateData) =>{
 
     })
 }
-const getAppointment = async() =>{
+
+const getDates=(viewName,currentDate)=>{
+    var curr = new Date(currentDate);
+    var firstday;
+    var lastday;
+    switch (viewName) {
+        case 'Week':
+              var first = curr.getDate() - curr.getDay()+1; // First day is the day of the month - the day of the week
+                var last = first + 6; // last day is the first day + 6
+                firstday = new Date(curr.setDate(first));
+                lastday = new Date(curr.setDate(last));
+            break;
+        case 'Month':
+                firstday=  new Date(curr.getFullYear(), curr.getMonth(), 1);
+               lastday = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+            break;
+    
+        default:
+            firstday=new Date(curr.setHours(0,0,0,0))
+            lastday=new Date(curr.setHours(23,59,59,999))
+            break;
+    }
+  
+    return {firstday,lastday}
+
+}
+
+const getAppointment = async(viewName="Week",currentDate=new Date()) =>{
     return new Promise(async(resolve,reject)=>{
         try {
-            const appointmentData = await Appointment.find().populate("studentID",'name').populate('teacherID','name')
+            const {firstday,lastday}=getDates(viewName,currentDate)
+            console.log("fistDate",firstday.toLocaleString())
+            console.log("lastday",lastday.toLocaleString())
+            const appointmentData = await Appointment.find({startDate:{$gte:firstday},endDate:{$lte:lastday}}).populate("studentID",'name').populate('teacherID','name')
              return resolve({success:true,appointmentData:appointmentData})
         } catch (err) {
              if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
@@ -101,12 +130,12 @@ const deleteAppointment=async(meetingID,zoomToken,paymentIntentID,stripe)=>{
             const meetResponse = await axios.delete(deleteMeetUrl,{headers:{Authorization:`Bearer ${zoomToken}`,...zoomHeaders}})
             if(meetResponse.status===204){
                  await stripe.refunds.create({
-  payment_intent: paymentIntentID,
-  amount: process.env.PAYMENT_AMOUNT,
-});
+                    payment_intent: paymentIntentID,
+                    amount: process.env.PAYMENT_AMOUNT,
+                });
                 const zoomData = await ZoomData.deleteOne({id:meetingID})
                 const appointmentResponse = await Appointment.deleteOne()
-                console.log("appointmentResponse",appointmentResponse)
+                //console.log("appointmentResponse",appointmentResponse)
               
                 return resolve({successs:true,response:{zoomData,appointmentResponse}})
             }

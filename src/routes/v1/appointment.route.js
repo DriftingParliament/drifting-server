@@ -11,6 +11,8 @@ router.delete("/:id",verifyUser,verifyZoomToken, appointment.deleteAppointment)
 router.patch("/:id",verifyUser, appointment.patchAppointment)
 router.get("/getTeachersList",verifyUser, appointment.getTeacherList)
 router.post("/create-payment-intent",verifyUser, appointment.checkout)
+router.get("/payment-status/:paymentIntent",verifyUser, appointment.paymentStatus)
+router.get('/meetings',verifyUser,appointment.meetings)
 //router.post("/createMeet",verifyUser,verifyZoomToken,appointment.createMeet)
 /* router.post("/signature", validate(appointmentValidation.signature),verifyUser, appointment.signature) */
 
