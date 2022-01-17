@@ -1,19 +1,17 @@
 const httpStatus = require('http-status')
 const { Appointment, Payment,ZoomData } = require('../models')
 const User = require('../models/user.model')
-const axios = require('axios')
-
-
-       
+const axios = require('axios');
+const ApiError =require('../utils/ApiError');
 const zoomHeaders={
       "User-Agent": "Zoom-api-Jwt-Request",
       "content-type": "application/json",
     } 
-const createAppointment = async(appointmentData,user,zoomMeetID,paymentID) =>{
+const createAppointment = async(appointmentData,user,zoomMeetID,paymentID,next) =>{
     return new Promise(async(resolve,reject)=>{
 console.log("Creating Appointment")
         const saveData ={
-            studentID:user._id,
+            teacherID:user._id,
             meetID:zoomMeetID,
             ...appointmentData
         }
@@ -31,11 +29,12 @@ console.log("Creating Appointment")
 const patchAppointment = async(appointmentID,updateData) =>{
     return new Promise(async(resolve,reject)=>{
         try {
+         
             const appointmentData = await Appointment.findByIdAndUpdate({_id:appointmentID},updateData,{new:true})
-            console.log("appointmentData",appointmentData);
+            //console.log("appointmentData",appointmentData);
              return resolve({success:true,appointmentData})
         } catch (err) {
-             if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
+             if(err) return reject({statusCode:httpStatus.CONFLICT,errorMessage:err.message})
         }
 
     })
@@ -43,38 +42,61 @@ const patchAppointment = async(appointmentID,updateData) =>{
 
 const getDates=(viewName,currentDate)=>{
     var curr = new Date(currentDate);
+    console.log("currentDate",currentDate)
+    console.log("curr",curr.getUTCDate() )
     var firstday;
     var lastday;
+    var x;
+    var y;
+    
     switch (viewName) {
         case 'Week':
-              var first = curr.getDate() - curr.getDay()+1; // First day is the day of the month - the day of the week
-                var last = first + 6; // last day is the first day + 6
-                firstday = new Date(curr.setDate(first));
-                lastday = new Date(curr.setDate(last));
+              var first = curr.getUTCDate() - curr.getUTCDay(); 
+                var last = first + 6; 
+                x = new Date(curr.setDate(first));
+                y = new Date(curr.setDate(last));
+                
             break;
         case 'Month':
-                firstday=  new Date(curr.getFullYear(), curr.getMonth(), 1);
-               lastday = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+                x=  new Date(curr.getUTCFullYear(), curr.getUTCMonth(), 1);
+               y = new Date(curr.getUTCFullYear(), curr.getUTCMonth() + 1, 0);
+             
             break;
     
         default:
-            firstday=new Date(curr.setHours(0,0,0,0))
-            lastday=new Date(curr.setHours(23,59,59,999))
+            x=new Date()
+            y=new Date()
             break;
     }
+    firstday=new Date(x.setHours(0,0,0,0))
+    lastday=new Date(y.setHours(23,59,59,999))
   
     return {firstday,lastday}
-
 }
-
-const getAppointment = async(viewName="Week",currentDate=new Date()) =>{
+const getAppointment = async(viewName="Week",currentDate=new Date(),userID,userRole="STUDENT" )=>{
     return new Promise(async(resolve,reject)=>{
         try {
             const {firstday,lastday}=getDates(viewName,currentDate)
-            console.log("fistDate",firstday.toLocaleString())
-            console.log("lastday",lastday.toLocaleString())
-            const appointmentData = await Appointment.find({startDate:{$gte:firstday},endDate:{$lte:lastday}}).populate("studentID",'name').populate('teacherID','name')
-             return resolve({success:true,appointmentData:appointmentData})
+           /*  console.log("fistDate",firstday.toLocaleString())
+            console.log("lastday",lastday.toLocaleString()) */
+            const appointmentData = await Appointment.find({startDate:{$gte:firstday},endDate:{$lte:lastday}}).populate("studentID",'name').populate('teacherID','name').populate('meetID',['join_url','start_url']).lean()
+            if(userRole==="TEACHER"){
+                appointmentData.map((item)=>{
+                item['id']=item['_id']
+                item['readOnly']= userID.equals(item.teacherID._id)?false:true
+                delete item['_id']
+                return item
+            })}
+            else if(userRole=="STUDENT"){
+                appointmentData.map(item=>{
+                    console.log('item.studentID.length',item.studentID.length)
+                    console.log('item.meetLimit',item.meetLimit)
+                  item['readOnly']= item.studentID.length>= item.meetLimit ? true :false  
+                return item
+                })
+            }
+           // console.log("appointmentData service ",appointmentData);
+            return resolve({success:true,appointmentData:appointmentData})
         } catch (err) {
              if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
         }
@@ -82,17 +104,20 @@ const getAppointment = async(viewName="Week",currentDate=new Date()) =>{
     })
 }
 
-const getTeacherList = async() =>{
+const getListByRole = async(role) =>{
     return new Promise(async(resolve,reject)=>{
         try {
-            const teachersList = await User.find({role:"TEACHER"}).select(['name','email','username'])
-             return resolve({success:true,teachersList})
+            const list = await User.find({role}).select(['name','email','username'])
+
+            return resolve({success:true,[role.toLowerCase().concat('List')]:list})
         } catch (err) {
              if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
         }
 
     })
 }
+
+
 const createMeet = async(zoomToken,meetMetaData) =>{
       return new Promise(async(resolve,reject)=>{
         try {
@@ -112,7 +137,7 @@ const createMeet = async(zoomToken,meetMetaData) =>{
                 const zoomData =await ZoomData.create(response.data)
                 return resolve(zoomData)
             } catch (error) {
-                if(error) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
+                if(error) return reject({statusCode:httpStatus.CONFLICT,message:error.message})
             }
              
         } catch (err) {
@@ -123,37 +148,94 @@ const createMeet = async(zoomToken,meetMetaData) =>{
   
 }
 
-const deleteAppointment=async(meetingID,zoomToken,paymentIntentID,stripe)=>{
-    return new Promise(async(resolve,reject)=>{
-        try {
-            const deleteMeetUrl = `https://api.zoom.us/v2/meetings/${meetingID}`
+const zoomDelete=async(appointmentData,zoomToken,nonRefundedStudent=[])=>{
+     const deleteMeetUrl = `https://api.zoom.us/v2/meetings/${appointmentData.meetID.id}`
+      try{
             const meetResponse = await axios.delete(deleteMeetUrl,{headers:{Authorization:`Bearer ${zoomToken}`,...zoomHeaders}})
+            console.log("meetResponse",meetResponse)
             if(meetResponse.status===204){
-                 await stripe.refunds.create({
-                    payment_intent: paymentIntentID,
-                    amount: process.env.PAYMENT_AMOUNT,
-                });
-                const zoomData = await ZoomData.deleteOne({id:meetingID})
-                const appointmentResponse = await Appointment.deleteOne()
-                //console.log("appointmentResponse",appointmentResponse)
-              
-                return resolve({successs:true,response:{zoomData,appointmentResponse}})
+                    console.log("MeetDeleted Successfully")
+                    const zoomData = await ZoomData.findByIdAndDelete(appointmentData.meetID._id)
+                    console.log("Meet Removed from DB Successfully")
+                    const appointmentResponse = await Appointment.findByIdAndDelete(appointmentData._id)
+                    console.log("Appointment Removed from DB Successfully")
+                    if(nonRefundedStudent.length>0){
+                               return ({success:true,zoomData,appointmentResponse,errorMessage:nonRefundedStudent.toString()})
+                            }
+                    return ({success:true,zoomData,appointmentResponse})
+                }
+                
+                return({success:false,errorMessage:meetResponse})
             }
-            return reject({statusCode:httpStatus.CONFLICT})
-        } catch (error) {
-             if(error) return reject({statusCode:httpStatus.CONFLICT,message:error.message})
-        }
-    })
+    catch(error){
+        console.log("meetResponseError",error)
+        return ({success:false,errorMessage:error.message})
+    }
+                
+                
 }
 
+const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
+     console.log('appointmentData',appointmentData)
+     try{ 
+         const deleteMeetUrl = `https://api.zoom.us/v2/meetings/${appointmentData.meetID.id}`
+         let refundSuccessCount=0
+         let nonRefundedStudent=[]
 
-const createPayment =async(paymentIntent)=>{
+         if(appointmentData.paymentID.length<1){
+           return await zoomDelete(appointmentData,zoomToken)
+          
+                }
+                
+                const refund = await Promise.allSettled(appointmentData.paymentID.map(async( payment ,key) =>{
+                    try {
+                       
+                        const refundStatus= await stripe.refunds.create({
+                            payment_intent: payment.id,
+                            amount: process.env.PAYMENT_AMOUNT,
+                    });
+                   // console.log('refundStatus',refundStatus)
+                    if(refundStatus.status==='succeeded') {
+                        refundSuccessCount+=1
+                        const{studentID,_id}= await Payment.findByIdAndUpdate(payment._id,{refunded:true})
+                       // console.log("Payment",studentID,_id)
+                        
+                        const appresp = await Appointment.findByIdAndUpdate(appointmentData._id,{$pull:{"studentID":studentID,"paymentID":_id}})
+                       // console.log("appresp",appresp)
+                        return(refundStatus)
+                    }
+                    
+                } catch (error) {
+                    console.log("error",error)
+                    nonRefundedStudent.push(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}`)            
+                    throw(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}   `)
+                    
+                 }
+                 
+                }))
+                /* console.log("refundSuccessCount",refundSuccessCount)
+                console.log("nonRefundedStudent",nonRefundedStudent)
+                console.log("REfund Map",refund.map(promise => promise)); */
+                if(refundSuccessCount>0){
+                     return  await zoomDelete(appointmentData,zoomToken,nonRefundedStudent)
+                     
+              
+            }
+            return({success:false,errorMessage:nonRefundedStudent.toString()})
+        }
+            
+   catch(error){
+       throw {statusCode:httpStatus.CONFLICT,message:error.message}
+   }
+}
+
+const createPayment =async(paymentIntent,appointmentID,studentID)=>{
     return new Promise(async(resolve,reject)=>{
          try {
-                 const paymentData = await Payment.create(paymentIntent)
+                 const paymentData = await Payment.create({appointmentID,studentID,...paymentIntent})
                 return resolve(paymentData)
             } catch (error) {
-                if(error) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
+                if(error) return reject({statusCode:httpStatus.CONFLICT,message:error.message})
             }
       
     })
@@ -162,7 +244,7 @@ const createPayment =async(paymentIntent)=>{
 module.exports = {
     createAppointment,
     getAppointment,
-    getTeacherList,
+    getListByRole,
     createMeet,
     patchAppointment,
     createPayment,

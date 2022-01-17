@@ -4,11 +4,15 @@ const toJSON = require('./toJSON.plugin');
 const paymentSchema = Schema(
     {
   "id": {
-    "type": "String"
+    "type": "String",
+    "unique":true
   },
+   "studentID":[{type: Schema.Types.ObjectId, ref: 'User'}], 
+   "appointmentID":[{type: Schema.Types.ObjectId, ref: 'Appointment'}], 
   "object": {
     "type": "String"
   },
+  "refunded":{"type":Boolean, default:false},
   "amount": {
     "type": "Number"
   },

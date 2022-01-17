@@ -1,14 +1,12 @@
 const {Schema,model} = require('mongoose');
 const toJSON = require('./toJSON.plugin');
-const axios = require('axios');
-const ZoomData= require('./zoomData.model');
 
 const appointmentSchema= Schema({
-    studentID:{type: Schema.Types.ObjectId, ref: 'User'},
     teacherID:{type: Schema.Types.ObjectId, ref: 'User'}, 
     meetID:{type: Schema.Types.ObjectId, ref: 'ZoomData'}, 
-    paymentID:{type: Schema.Types.ObjectId, ref: 'Payment'}, 
-  
+    studentID:[{type: Schema.Types.ObjectId, ref: 'User'}], 
+    paymentID:[{type: Schema.Types.ObjectId, ref: 'Payment'}], 
+    meetLimit:{type:Number,default:8},
     title:String,
     notes:String,
     startDate:Date,

@@ -30,13 +30,37 @@ const createAppointment = catchAsync(async(req,res,next) =>{
         return next(new ApiError(error.statusCode, error.message));
     }
 })
+const studentUpdate = catchAsync(async(req,res,next) =>{
+    try {
+        const {appointmentData,paymentIntent,studentID}=req.body
+        if(studentID===undefined|| studentID===null){
+            return next(new ApiError(httpStatus.REQUEST_TIMEOUT, "Time expired. Please retry"));
+        }
+            console.log("appointmentData",appointmentData)
+            console.log("paymentIntent",paymentIntent)
+            console.log("studentID",studentID)
+            const paymentData = await appointmentService.createPayment(paymentIntent,appointmentData._id,studentID)
+            const appointment = await Appointment.findOneAndUpdate({_id:appointmentData._id},{$push:{studentID:studentID,paymentID:paymentData._id}})
+            //const appointment = await Appointment.findOne({_id:appointmentData._id})
+            //console.log("paymentData",paymentData)
+            console.log("appointment",appointment)
+            return res.status(httpStatus.OK).send({success:true})
+
+        
+
+    } catch (error) {
+        return next(new ApiError(error.statusCode, error.message));
+    }
+})
+
 const getAppointment = catchAsync(async(req,res,next) =>{
     try {
     const {viewName,currentDate}=req.query
-    console.log("viewName,currentDate",req.query)
+    /* console.log("req.user",req.user) */
+ /*    console.log("viewName,currentDate",req.query) */
 
-    const response =await appointmentService.getAppointment(viewName,currentDate)
-    console.log("Getting Appointments")
+    const response =await appointmentService.getAppointment(viewName,currentDate,req.user._id,req.user.role)
+    console.log("Getting Appointments count =>",response.appointmentData.length)
         return res.status(httpStatus.OK).send(response)
     } catch (error) {
         return next(new ApiError(error.statusCode, error.message));
@@ -47,9 +71,9 @@ const deleteAppointment = catchAsync(async(req,res,next) =>{
         const appointmentID =req.params.id
         const { signedCookies = {} } = req
         let zoomToken= req.zoomToken ? req.zoomToken :signedCookies.zoomToken
-        const appointmentData=await Appointment.findById(appointmentID).populate('meetID','id').populate('paymentID','id')
-        console.log('appointmentData',appointmentData)
-        const response =await appointmentService.deleteAppointment(appointmentData.meetID.id,zoomToken,appointmentData.paymentID.id,stripe)
+        const appointmentData=await Appointment.findById(appointmentID).populate('meetID','id').populate('paymentID','id').populate('studentID','name')
+        //console.log('appointmentData',appointmentData)
+        const response =await appointmentService.deleteAppointment(appointmentData,zoomToken,stripe)
         return res.status(httpStatus.OK).send(response)
     } catch (error) {
         return next(new ApiError(error.statusCode, error.message));
@@ -59,19 +83,24 @@ const patchAppointment = catchAsync(async(req,res,next) =>{
     try {
     
         const appointmentID =req.params.id
-        const updateData = req.body
-        const response =await appointmentService.patchAppointment(appointmentID,updateData)
+        const {appointmentData} = req.body
+        console.log("appointmentData", appointmentData);
+      console.log("appointmentID", appointmentID);
+        const response =await appointmentService.patchAppointment(appointmentID,appointmentData)
         return res.status(httpStatus.OK).send(response)
     } catch (error) {
         return next(new ApiError(error.statusCode, error.message));
     }
 })
-const getTeacherList = catchAsync(async(req,res,next) =>{
+const getUserByRole = catchAsync(async(req,res,next) =>{
     try {
-    
-        const response =await appointmentService.getTeacherList()
+        const {role}=req.params
+       
+        const response =await appointmentService.getListByRole(role.toUpperCase())
+        
         return res.status(httpStatus.OK).send(response)
     } catch (error) {
+        console.log("error",error)
         return next(new ApiError(error.statusCode, error.message));
     }
 })
@@ -99,7 +128,10 @@ const paymentStatus=catchAsync(async(req,res,next)=>{
 })
 
 const checkout = catchAsync(async(req,res,next)=>{
-     const { receipt_email="bhavindhodia13@gmail.com"} = req.body;
+
+     const { email="bhavindhodia13@gmail.com",name} = req.body.userData;
+     const { title} = req.body.appointmentData;
+    console.log(req.body);
     try {
          const paymentIntent = await stripe.paymentIntents.create({
             amount:process.env.PAYMENT_AMOUNT,
@@ -110,7 +142,7 @@ const checkout = catchAsync(async(req,res,next)=>{
             },
          
   shipping: {
-    name: 'Jenny Rosen',
+    name,
     address: {
       line1: '510 Townsend St',
       postal_code: '98140',
@@ -119,8 +151,9 @@ const checkout = catchAsync(async(req,res,next)=>{
       country: 'US',
     },
   },
-            description:"For Appointment",
-            receipt_email
+            description:`Payment by ${name} for ${title}`,
+            receipt_email:email,
+            metadata:{"by":"Bhavin Dhodia"}
         });
         res.status(httpStatus.OK).send({success:true,clientSecret: paymentIntent.client_secret,metadata:paymentIntent.metadata})
        
@@ -130,4 +163,4 @@ const checkout = catchAsync(async(req,res,next)=>{
     }
 })
 
-module.exports = {createAppointment,meetings,paymentStatus,getAppointment,checkout,getTeacherList,patchAppointment,deleteAppointment}
+module.exports = {createAppointment,meetings,paymentStatus,getAppointment,checkout,getUserByRole,patchAppointment,deleteAppointment,studentUpdate}

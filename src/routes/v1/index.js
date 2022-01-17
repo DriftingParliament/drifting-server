@@ -2,6 +2,7 @@ const router = require('express').Router()
 //const authRoute = require('./auth.route')
 const authRoute=require("./auth.route")
 const appointmentRoute=require("./appointment.route")
+const paymentRoute=require("./payment.route")
 
 
 const defaultRoutes = [
@@ -12,6 +13,11 @@ const defaultRoutes = [
     {
         path:'/appointment',
         route:appointmentRoute
+    }
+    ,
+    {
+        path:'/payment',
+        route:paymentRoute
     }
 ];
 

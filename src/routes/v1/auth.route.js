@@ -7,8 +7,6 @@ const {authController,userController} = require('../../controllers');
 router.post('/login', validate(authValidation.login),authController.login);
 router.post('/signup', validate(authValidation.signup),authController.register);
 router.post('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
-//router.get('/isAuthenticated',authController.isLoggedIn)
-//router.get("/me",userController.userData)
 
 
 router.get("/logout",authController.logout)

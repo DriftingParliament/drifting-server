@@ -46,12 +46,12 @@ var verifyUser = function (req, res, next) {
 }
 
 var generateZoomToken =()=>{
-  console.log("Generating Zoom Token")
   const payload = {
-              iss:  process.env.ZOOM_JWT_API_KEY,
-              exp: new Date().getTime() + 5000,
-              };
+    iss:  process.env.ZOOM_JWT_API_KEY,
+    exp: new Date().getTime() + 5000,
+  };
   const token = jwt.sign(payload, process.env.ZOOM_JWT_API_SECRET); 
+  console.log("Generating Zoom Token",token)
   return token
 }
 var verifyZoomToken = (req,res,next)=>{
@@ -59,9 +59,10 @@ var verifyZoomToken = (req,res,next)=>{
   let { zoomToken } = signedCookies
    if(!zoomToken){
       zoomToken= generateZoomToken()
+      console.log('zoomToken',zoomToken)
       res.cookie("zoomToken",zoomToken,COOKIE_OPTIONS)
       req.zoomToken=zoomToken
-next()
+      next()
    }
    else{
      try {
