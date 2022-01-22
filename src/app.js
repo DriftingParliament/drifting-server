@@ -67,7 +67,7 @@ app.get("/", function (req, res) {
   res.send({ status: "success" })
 })
 app.get("/v1/auth/me", passport.authenticate('jwt', { session: false }),function (req, res) {
-  res.send({ status: "success",user:req.user })
+  res.send({ success:true,user:req.user })
 })
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

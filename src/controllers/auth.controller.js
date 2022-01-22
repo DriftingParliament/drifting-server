@@ -21,7 +21,9 @@ const register = catchAsync(async (req, res,next) => {
 
 const login = catchAsync(async (req, res,next) => {
     try {
+
        const response = await authService.passportAuthenticationPromise(req,res)
+       console.log("Loging User ")
        return res.status(httpStatus.OK).send({...response})
     } catch (error) {
         next(new ApiError(error.statusCode, error.message));
@@ -37,7 +39,7 @@ const logout = catchAsync(async (req, res,next) => {
     console.log("user,",refreshToken)
     const response = await authService.logout(userId,refreshToken)
        console.log("res",response);
-       res.clearCookie("refreshToken", COOKIE_OPTIONS)
+        res.clearCookie("refreshToken", COOKIE_OPTIONS)
        return res.status(httpStatus.OK).send({success:true,...response})
     } catch (error) {
         next(new ApiError(httpStatus.UNAUTHORIZED, "Already Logged out"));
@@ -52,7 +54,7 @@ const refreshTokens = catchAsync(async (req, res,next) => {
      if(refreshToken){
         try {
             const response = await authService.refreshAuth(refreshToken)
-           // console.log('response',response)
+           console.log("Refreshing TOken")
             res.cookie("refreshToken", response.newRefreshToken, COOKIE_OPTIONS)
             return res.status(httpStatus.OK).send({success:true,token:response.accessToken,role:response.userData.role})
             }

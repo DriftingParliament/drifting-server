@@ -6,9 +6,10 @@ const {authController,userController} = require('../../controllers');
 
 router.post('/login', validate(authValidation.login),authController.login);
 router.post('/signup', validate(authValidation.signup),authController.register);
-router.post('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
+//router.post('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
+router.get('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
 
 
-router.get("/logout",authController.logout)
+router.post("/logout",authController.logout)
 
 module.exports = router

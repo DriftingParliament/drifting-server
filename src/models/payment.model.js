@@ -7,8 +7,8 @@ const paymentSchema = Schema(
     "type": "String",
     "unique":true
   },
-   "studentID":[{type: Schema.Types.ObjectId, ref: 'User'}], 
-   "appointmentID":[{type: Schema.Types.ObjectId, ref: 'Appointment'}], 
+   "studentID":{type: Schema.Types.ObjectId, ref: 'User'}, 
+   "appointmentID":{type: Schema.Types.ObjectId, ref: 'Appointment'}, 
   "object": {
     "type": "String"
   },
@@ -130,7 +130,7 @@ const paymentSchema = Schema(
 }
 )
 
-paymentSchema.plugin(toJSON)
+//paymentSchema.plugin(toJSON)
 
 const Payment=model('Payment',paymentSchema)
 

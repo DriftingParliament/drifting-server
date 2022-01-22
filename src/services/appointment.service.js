@@ -77,8 +77,6 @@ const getAppointment = async(viewName="Week",currentDate=new Date(),userID,userR
     return new Promise(async(resolve,reject)=>{
         try {
             const {firstday,lastday}=getDates(viewName,currentDate)
-           /*  console.log("fistDate",firstday.toLocaleString())
-            console.log("lastday",lastday.toLocaleString()) */
             const appointmentData = await Appointment.find({startDate:{$gte:firstday},endDate:{$lte:lastday}}).populate("studentID",'name').populate('teacherID','name').populate('meetID',['join_url','start_url']).lean()
             if(userRole==="TEACHER"){
                 appointmentData.map((item)=>{
@@ -197,24 +195,25 @@ const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
                    // console.log('refundStatus',refundStatus)
                     if(refundStatus.status==='succeeded') {
                         refundSuccessCount+=1
-                        const{studentID,_id}= await Payment.findByIdAndUpdate(payment._id,{refunded:true})
-                       // console.log("Payment",studentID,_id)
-                        
+                        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+                        const{studentID,_id}=await Payment.findByIdAndUpdate(payment._id,{refunded:true,...paymentIntent},{new:true})
+                        //const{studentID,_id}= await Payment.findByIdAndUpdate(payment._id,{refunded:true})
+                        // console.log("Payment",studentID,_id)
                         const appresp = await Appointment.findByIdAndUpdate(appointmentData._id,{$pull:{"studentID":studentID,"paymentID":_id}})
-                       // console.log("appresp",appresp)
+                        //console.log("appresp",appresp)
                         return(refundStatus)
                     }
                     
                 } catch (error) {
-                    console.log("error",error)
+                    console.log("error",error.message)
                     nonRefundedStudent.push(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}`)            
                     throw(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}   `)
                     
                  }
                  
                 }))
-                /* console.log("refundSuccessCount",refundSuccessCount)
                 console.log("nonRefundedStudent",nonRefundedStudent)
+                /* console.log("refundSuccessCount",refundSuccessCount)
                 console.log("REfund Map",refund.map(promise => promise)); */
                 if(refundSuccessCount>0){
                      return  await zoomDelete(appointmentData,zoomToken,nonRefundedStudent)

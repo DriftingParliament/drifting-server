@@ -4,6 +4,7 @@ const validate = require('../../middlewares/validate');
 const { verifyUser} = require("../../services/token.service");
 //router.post("/", validate(appointmentValidation.create),verifyUser,verifyZoomToken, appointment.createAppointment)
 //router.post("/", verifyUser, appointment.createAppointment)
-router.get("/getAllPayments",verifyUser, payment.getAllPayments)
+router.get("/getAll",verifyUser, payment.getAll)
+router.post("/refund/:paymentIntentId",verifyUser, payment.refund)
 
 module.exports = router

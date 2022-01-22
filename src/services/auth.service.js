@@ -29,7 +29,7 @@ const passportAuthenticationPromise = async (req, res) => {
         return resolve({success:true,token:accessToken,role:userData.role})
         } catch (error) {
           console.log("err",error)
-           return reject({statusCode:httpStatus.SERVICE_UNAVAILABLE,message:'Error occured while saving data'})
+           return reject({statusCode:httpStatus.SERVICE_UNAVAILABLE,success:false,errorMessage:'Error occured while saving data'})
         }
         
         
