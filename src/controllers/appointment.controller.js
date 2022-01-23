@@ -135,7 +135,7 @@ const checkout = catchAsync(async(req,res,next)=>{
     try {
          const paymentIntent = await stripe.paymentIntents.create({
             amount:process.env.PAYMENT_AMOUNT,
-            currency: "usd",
+            currency: "cad",
            payment_method_types: ['card'],
             /* automatic_payment_methods: {
             enabled: true,
