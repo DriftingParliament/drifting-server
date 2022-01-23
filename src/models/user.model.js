@@ -20,7 +20,7 @@ const userSchema = mongoose.Schema(
         email: {
             type: String,
             required: true,
-            unique: true,
+            unique: "Two user share same email",
             trim: true,
             lowercase: true,
         },

@@ -11,6 +11,7 @@ const signup = {
         email: Joi.string().email().required(),
         username: Joi.string().required(),
         password: Joi.string().required(),
+        confirmPassword: Joi.string()
     }),
 };
 

@@ -14,6 +14,7 @@ const register = catchAsync(async (req, res,next) => {
        res.cookie("refreshToken",response.refreshToken,COOKIE_OPTIONS)
        return res.status(httpStatus.OK).send({success:true,token:response.token})
     } catch (error) {
+        console.log('resister',error.message)
         next(new ApiError(error.statusCode, error.message));
     }
 });
@@ -79,22 +80,17 @@ const resetPassword = catchAsync(async (req, res) => {
     res.status(httpStatus.NO_CONTENT).send();
 });
 
-/* const sendVerificationEmail = catchAsync(async (req, res) => {
-    const verifyEmailToken = await tokenService.generateVerifyEmailToken(req.user);
-    await emailService.sendVerificationEmail(req.user.email, verifyEmailToken);
-    res.status(httpStatus.NO_CONTENT).send();
-}); */
+const profileUpdate=catchAsync(async(req,res,next)=>{
+    console.log("uid",req.params.id)
+    console.log("datta",req.body)
+    const userID=req.params.id
+    const newData=req.body
+    
+    const response=await authService.profileUpdate(userID,newData)
+    console.log("respos",response)
 
-const verifyEmail = catchAsync(async (req, res) => {
-    await authService.verifyEmail(req.query.token);
-    res.status(httpStatus.NO_CONTENT).send();
-});
-
-const sendTestEmail = catchAsync(async(req,res)=>{
-    await emailService.testEmail()
-    res.status(httpStatus.NO_CONTENT).send();
+return  res.status(httpStatus.OK).send(response);
 })
-
 
 
 module.exports = {
@@ -104,8 +100,6 @@ module.exports = {
     refreshTokens,
     forgotPassword,
     resetPassword,
-    //sendVerificationEmail,
-    verifyEmail,
-    sendTestEmail,
+  profileUpdate
 
 };

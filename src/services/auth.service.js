@@ -44,7 +44,7 @@ const passportRegistrationPromise =async(body) =>{
             new User(body),body.password,
             async(err,user)=>{
                 //user.name = req.body.name
-                if(err) return reject({statusCode:httpStatus.CONFLICT,message:err.message})
+                if(err) return reject({statusCode:httpStatus.CONFLICT,message:"Email already exist"})
                 const accessToken = getAccessToken({ _id: user._id })
                 const refreshToken = getRefreshToken({ _id: user._id })
                 user.refreshToken.push({ refreshToken })
@@ -55,7 +55,10 @@ const passportRegistrationPromise =async(body) =>{
                         return resolve({success:true,refreshToken,token:accessToken})
                 } 
                 catch (error) {
-                        reject({statusCode:httpStatus.SERVICE_UNAVAILABLE,message:'Error occured while saving data'})
+        
+       reject({statusCode:httpStatus.SERVICE_UNAVAILABLE,errorMessage:error.message})
+    
+                       
                     }
             }
         )
@@ -149,6 +152,23 @@ const verifyEmail = async (verifyEmailToken) => {
     }
 };
 
+const profileUpdate=async(userID,newData)=>{
+  try {
+    const user=await User.findByIdAndUpdate(userID,newData,{new:true})
+  console.log('user',user)
+    return({success:true,user})
+  } catch (error) {
+    console.log("error",error.name)
+    if(error.name==="MongoServerError"){
+      throw new ApiError(httpStatus.CONFLICT, "This data already exist");
+
+    }else{
+
+      throw new ApiError(httpStatus.CONFLICT, error.message);
+    }
+  }
+}
+
 module.exports = {
     passportAuthenticationPromise,
     passportRegistrationPromise,
@@ -156,4 +176,5 @@ module.exports = {
     refreshAuth,
     resetPassword,
     verifyEmail,
+    profileUpdate
 };

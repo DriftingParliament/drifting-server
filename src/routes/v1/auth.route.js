@@ -8,6 +8,7 @@ router.post('/login', validate(authValidation.login),authController.login);
 router.post('/signup', validate(authValidation.signup),authController.register);
 //router.post('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
 router.get('/refreshToken', validate(authValidation.refreshTokens),authController.refreshTokens);
+router.patch('/profileUpdate/:id', authController.profileUpdate);
 
 
 router.post("/logout",authController.logout)
