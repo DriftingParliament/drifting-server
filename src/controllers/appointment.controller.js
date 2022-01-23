@@ -3,8 +3,9 @@ const catchAsync = require("../utils/catchAsync");
 const httpStatus = require('http-status');
 const ApiError =require('../utils/ApiError');
 const { Appointment } = require("../models");
+require('dotenv').config()
 const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51K4FivSGS4s5bT6h0cn5wrprQkBq50hiZ43bMBZ78lzitXt5BBUPPQDv3pbJbVB40pSw38gmiZlh5omFJDrPtgyA00MLAiK6MK');
+const stripe = Stripe(process.env.STRIPE_API_KEY);
 
 const createAppointment = catchAsync(async(req,res,next) =>{
     try {
@@ -127,19 +128,19 @@ const paymentStatus=catchAsync(async(req,res,next)=>{
     }
 })
 
-const checkout = catchAsync(async(req,res,next)=>{
+/* const checkout = catchAsync(async(req,res,next)=>{
 
      const { email="bhavindhodia13@gmail.com",name} = req.body.userData;
      const { title} = req.body.appointmentData;
-    console.log(req.body);
+   // console.log(req.body);
     try {
          const paymentIntent = await stripe.paymentIntents.create({
             amount:process.env.PAYMENT_AMOUNT,
             currency: "cad",
            payment_method_types: ['card'],
-            /* automatic_payment_methods: {
+            automatic_payment_methods: {
             enabled: true,
-            }, */
+            },
          
   shipping: {
     name,
@@ -161,6 +162,6 @@ const checkout = catchAsync(async(req,res,next)=>{
         console.log('err',error)
          return next(new ApiError(error.statusCode, error.message));
     }
-})
+}) */
 
-module.exports = {createAppointment,meetings,paymentStatus,getAppointment,checkout,getUserByRole,patchAppointment,deleteAppointment,studentUpdate}
+module.exports = {createAppointment,meetings,paymentStatus,getAppointment,getUserByRole,patchAppointment,deleteAppointment,studentUpdate}
