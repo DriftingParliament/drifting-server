@@ -3,8 +3,8 @@ const catchAsync = require("../utils/catchAsync");
 const httpStatus = require('http-status');
 const ApiError =require('../utils/ApiError');
 const { Appointment } = require("../models");
-const stripe = require('stripe')('sk_test_51K4FivSGS4s5bT6h0cn5wrprQkBq50hiZ43bMBZ78lzitXt5BBUPPQDv3pbJbVB40pSw38gmiZlh5omFJDrPtgyA00MLAiK6MK');
-
+const Stripe = require('stripe');
+const stripe = Stripe('sk_test_51K4FivSGS4s5bT6h0cn5wrprQkBq50hiZ43bMBZ78lzitXt5BBUPPQDv3pbJbVB40pSw38gmiZlh5omFJDrPtgyA00MLAiK6MK');
 
 const createAppointment = catchAsync(async(req,res,next) =>{
     try {
