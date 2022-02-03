@@ -6,6 +6,7 @@ const { Appointment } = require("../models");
 require('dotenv').config()
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_API_KEY);
+const moment=require("moment") 
 
 const createAppointment = catchAsync(async(req,res,next) =>{
     try {
@@ -38,9 +39,16 @@ const studentUpdate = catchAsync(async(req,res,next) =>{
             return next(new ApiError(httpStatus.REQUEST_TIMEOUT, "Time expired. Please retry"));
         }
             console.log("appointmentData",appointmentData)
-            console.log("paymentIntent",paymentIntent)
+            console.log("paymentIntentID",paymentIntent.id)
             console.log("studentID",studentID)
-            const paymentData = await appointmentService.createPayment(paymentIntent,appointmentData._id,studentID)
+               const newPaymentIntent = await stripe.paymentIntents.retrieve(
+                 paymentIntent.id
+               );
+            const paymentData = await appointmentService.createPayment(
+              newPaymentIntent,
+              appointmentData,
+              studentID
+            );
             const appointment = await Appointment.findOneAndUpdate({_id:appointmentData._id},{$push:{studentID:studentID,paymentID:paymentData._id}})
             //const appointment = await Appointment.findOne({_id:appointmentData._id})
             //console.log("paymentData",paymentData)
@@ -109,59 +117,145 @@ const getUserByRole = catchAsync(async(req,res,next) =>{
 
 const meetings=catchAsync(async(req,res,next)=>{
     try{
-        const response=await  Appointment.find({studentID:req.user._id,startDate:{$gte:Date()}}).populate('teacherID','name').populate('meetID','join_url');
-      
+        const {user} =req
+        const roleId = user.role.toString().toLowerCase().concat('ID')
+        const response=await  Appointment.find({[roleId]:req.user._id,startDate:{$gte:Date()}}).populate('studentID','name').populate('teacherID','name').populate('meetID',['join_url','start_url']);
         return res.status(httpStatus.OK).send(response)
     }
     catch (error) {
         return next(new ApiError(error.statusCode, error.message));
     }
 })
-const paymentStatus=catchAsync(async(req,res,next)=>{
-    try{
-        const response=await  stripe.paymentIntents.retrieve(req.params.paymentIntent);
-        console.log("response",response.charges.data[0].status)
-        return res.status(httpStatus.OK).send(response)
-    }
-    catch (error) {
-        return next(new ApiError(error.statusCode, error.message));
-    }
-})
-
-/* const checkout = catchAsync(async(req,res,next)=>{
-
-     const { email="bhavindhodia13@gmail.com",name} = req.body.userData;
-     const { title} = req.body.appointmentData;
-   // console.log(req.body);
-    try {
-         const paymentIntent = await stripe.paymentIntents.create({
-            amount:process.env.PAYMENT_AMOUNT,
-            currency: "cad",
-           payment_method_types: ['card'],
-            automatic_payment_methods: {
-            enabled: true,
+const appointmentStats = catchAsync(async (req, res, next) => {
+  try {
+    const {user }= req
+    console.log("user",user._id)
+    const cardStatsData = await Appointment.aggregate([
+      {
+        $match: {
+          teacherID: user._id,
+        },
+      },
+      {
+        $facet: {
+          upCommingMeet: [
+            {
+              $match: {
+                startDate: {
+                  $gte: moment()
+                    .startOf("day")
+                    .toDate(),
+                },
+              },
             },
-         
-  shipping: {
-    name,
-    address: {
-      line1: '510 Townsend St',
-      postal_code: '98140',
-      city: 'San Francisco',
-      state: 'CA',
-      country: 'US',
-    },
-  },
-            description:`Payment by ${name} for ${title}`,
-            receipt_email:email,
-            metadata:{"by":"Bhavin Dhodia"}
-        });
-        res.status(httpStatus.OK).send({success:true,clientSecret: paymentIntent.client_secret,metadata:paymentIntent.metadata})
-       
-    } catch (error) {
-        console.log('err',error)
-         return next(new ApiError(error.statusCode, error.message));
-    }
-}) */
+            {
+              $count: "upCommingMeet",
+            },
+          ],
+          todaysMeet: [
+            {
+              $match: {
+                startDate: {
+                  $gte: moment()
+                    .startOf("day")
+                    .toDate(),
+                  $lte: moment()
+                    .endOf("day")
+                    .toDate(),
+                },
+              },
+            },
+            {
+              $count: "todaysMeet",
+            },
+          ],
+          registeredStudent: [
+            {
+              $match: {
+                startDate: {
+                  $gte: moment()
+                    .startOf("day")
+                    .toDate(),
+                },
+              },
+            },
+            {
+              $project: {
+                _id: "000",
+                singleAppointment: {
+                  $cond: {
+                    if: { $isArray: "$studentID" },
+                    then: { $size: "$studentID" },
+                    else: 0,
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                registeredStudent: { $sum: "$singleAppointment" },
+              },
+            },
+          ],
+        },
+      },
+      { $unwind: "$todaysMeet" },
+      { $unwind: "$upCommingMeet" },
+      { $unwind: "$registeredStudent" },
+      {
+        $project: {
+          todaysMeet: "$todaysMeet.todaysMeet",
+          upCommingMeet: "$upCommingMeet.upCommingMeet",
+          registeredStudent: "$registeredStudent.registeredStudent",
+        },
+      },
+    ]);
 
-module.exports = {createAppointment,meetings,paymentStatus,getAppointment,getUserByRole,patchAppointment,deleteAppointment,studentUpdate}
+  
+    const chartStatsData = await Appointment.aggregate([
+      {
+        $match: {
+          teacherID: user._id,
+        },
+      },
+      {
+        $project: {
+          name: "$title",
+          startDate: "$startDate",
+          studentRegistered: {
+            $cond: {
+              if: { $isArray: "$studentID" },
+              then: { $size: "$studentID" },
+              else: 0,
+            },
+          },
+        },
+      },
+      { $sort: { startDate: -1 } },
+      { $limit: 5 },
+    ]);
+    console.log("chartStatsData ", chartStatsData);
+    return res
+      .status(httpStatus.OK)
+      .send({
+        success: true,
+        cardStatsData: cardStatsData[0],
+        chartStatsData: chartStatsData,
+      });
+  } catch (error) {
+    return next(new ApiError(error.statusCode, error.message));
+  }
+});
+
+
+module.exports = {
+  createAppointment,
+  appointmentStats,
+  meetings,
+  getAppointment,
+  getUserByRole,
+  patchAppointment,
+  deleteAppointment,
+  studentUpdate,
+};

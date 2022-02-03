@@ -13,8 +13,9 @@ router.patch("/:id",verifyUser, appointment.patchAppointment)
 router.get("/getUserByRole/:role",verifyUser, appointment.getUserByRole)
 //router.get("/getStudentList",verifyUser, appointment.getStudentList)
 //router.post("/create-payment-intent",verifyUser, appointment.checkout)
-router.get("/payment-status/:paymentIntent",verifyUser, appointment.paymentStatus)
+
 router.get('/meetings',verifyUser,appointment.meetings)
+router.get("/data", verifyUser, appointment.appointmentStats);
 //router.post("/createMeet",verifyUser,verifyZoomToken,appointment.createMeet)
 /* router.post("/signature", validate(appointmentValidation.signature),verifyUser, appointment.signature) */
 

@@ -2,7 +2,9 @@ const httpStatus = require('http-status')
 const { Appointment, Payment,ZoomData } = require('../models')
 const User = require('../models/user.model')
 const axios = require('axios');
-const ApiError =require('../utils/ApiError');
+const moment= require('moment')
+require("dotenv").config();
+
 const zoomHeaders={
       "User-Agent": "Zoom-api-Jwt-Request",
       "content-type": "application/json",
@@ -42,8 +44,9 @@ const patchAppointment = async(appointmentID,updateData) =>{
 
 const getDates=(viewName,currentDate)=>{
     var curr = new Date(currentDate);
-    console.log("currentDate",currentDate)
-    console.log("curr",curr.getUTCDate() )
+   /*  console.log("currentDate",currentDate)
+    console.log("getUTCDate", curr.getUTCDate());
+    console.log("getUTCDay", curr.getUTCDay()+1); */
     var firstday;
     var lastday;
     var x;
@@ -51,8 +54,10 @@ const getDates=(viewName,currentDate)=>{
     
     switch (viewName) {
         case 'Week':
-              var first = curr.getUTCDate() - curr.getUTCDay(); 
+              var first = curr.getUTCDate() - (curr.getUTCDay()); 
                 var last = first + 6; 
+                console.log("first", first);
+                console.log("last", last);
                 x = new Date(curr.setDate(first));
                 y = new Date(curr.setDate(last));
                 
@@ -64,20 +69,40 @@ const getDates=(viewName,currentDate)=>{
             break;
     
         default:
-            x=new Date()
-            y=new Date()
+            x=new Date(currentDate)
+            y = new Date(currentDate);
             break;
     }
-    firstday=new Date(x.setHours(0,0,0,0))
-    lastday=new Date(y.setHours(23,59,59,999))
+    firstday = new Date(x.setHours(0, 0, 1, 01)).toUTCString();
+    lastday = new Date(y.setHours(23, 59, 59, 999)).toUTCString();
   
     return {firstday,lastday}
 }
-const getAppointment = async(viewName="Week",currentDate=new Date(),userID,userRole="STUDENT" )=>{
+const getAppointment = async(viewName="Week",currentDate,userID,userRole="STUDENT" )=>{
     return new Promise(async(resolve,reject)=>{
         try {
-            const {firstday,lastday}=getDates(viewName,currentDate)
-            const appointmentData = await Appointment.find({startDate:{$gte:firstday},endDate:{$lte:lastday}}).populate("studentID",'name').populate('teacherID','name').populate('meetID',['join_url','start_url']).lean()
+          
+            const LOCAL_OFFSET=process.env.LOCAL_OFFSET
+            const firstday = moment
+              .utc(currentDate)
+              .utcOffset(LOCAL_OFFSET)
+              .startOf(viewName.toLocaleLowerCase())
+              .local();
+            const lastday = moment
+              .utc(currentDate)
+              .utcOffset(LOCAL_OFFSET)
+              .endOf(viewName.toLocaleLowerCase())
+              .local();
+            console.log("firstday", firstday);
+            console.log("lastday", lastday);
+            const appointmentData = await Appointment.find({
+              startDate: { $gte: firstday },
+              endDate: { $lte: lastday },
+            })
+              .populate("studentID", "name")
+              .populate("teacherID", "name")
+              .populate("meetID", ["join_url", "start_url"])
+              .lean();
             if(userRole==="TEACHER"){
                 appointmentData.map((item)=>{
                 item['id']=item['_id']
@@ -150,7 +175,7 @@ const zoomDelete=async(appointmentData,zoomToken,nonRefundedStudent=[])=>{
      const deleteMeetUrl = `https://api.zoom.us/v2/meetings/${appointmentData.meetID.id}`
       try{
             const meetResponse = await axios.delete(deleteMeetUrl,{headers:{Authorization:`Bearer ${zoomToken}`,...zoomHeaders}})
-            console.log("meetResponse",meetResponse)
+        
             if(meetResponse.status===204){
                     console.log("MeetDeleted Successfully")
                     const zoomData = await ZoomData.findByIdAndDelete(appointmentData.meetID._id)
@@ -176,7 +201,7 @@ const zoomDelete=async(appointmentData,zoomToken,nonRefundedStudent=[])=>{
 const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
      console.log('appointmentData',appointmentData)
      try{ 
-         const deleteMeetUrl = `https://api.zoom.us/v2/meetings/${appointmentData.meetID.id}`
+         
          let refundSuccessCount=0
          let nonRefundedStudent=[]
 
@@ -228,10 +253,17 @@ const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
    }
 }
 
-const createPayment =async(paymentIntent,appointmentID,studentID)=>{
+const createPayment =async(paymentIntent,appointmentData,studentID)=>{
     return new Promise(async(resolve,reject)=>{
          try {
-                 const paymentData = await Payment.create({appointmentID,studentID,...paymentIntent})
+             const {_id:appointmentID,teacherID}=appointmentData
+          
+                 const paymentData = await Payment.create({
+                   appointmentID,
+                   studentID,
+                   teacherID,
+                   ...paymentIntent,
+                 });
                 return resolve(paymentData)
             } catch (error) {
                 if(error) return reject({statusCode:httpStatus.CONFLICT,message:error.message})

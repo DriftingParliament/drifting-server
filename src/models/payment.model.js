@@ -8,6 +8,7 @@ const paymentSchema = Schema(
     "unique":true
   },
    "studentID":{type: Schema.Types.ObjectId, ref: 'User'}, 
+   "teacherID":{type: Schema.Types.ObjectId, ref: 'User'}, 
    "appointmentID":{type: Schema.Types.ObjectId, ref: 'Appointment'}, 
   "object": {
     "type": "String"

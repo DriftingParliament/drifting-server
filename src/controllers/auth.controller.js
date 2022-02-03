@@ -76,8 +76,13 @@ const forgotPassword = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-    await authService.resetPassword(req.query.token, req.body.password);
-    res.status(httpStatus.NO_CONTENT).send();
+    const response = await req.user.changePassword(
+      req.body.currentPassword,
+      req.body.newPassword
+    );
+        
+        console.log("respos",response)
+   res.status(httpStatus.OK).send({success:true,response})
 });
 
 const profileUpdate=catchAsync(async(req,res,next)=>{
