@@ -50,8 +50,8 @@ const logout = catchAsync(async (req, res,next) => {
 const refreshTokens = catchAsync(async (req, res,next) => {
      const { signedCookies = {} } = req
      const { refreshToken } = signedCookies
-    // console.log('signedCookies',signedCookies)
-     //console.log('refreshToken',refreshToken)
+     console.log('signedCookies',signedCookies)
+     console.log('refreshToken',refreshToken)
      if(refreshToken){
         try {
             const response = await authService.refreshAuth(refreshToken)

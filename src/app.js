@@ -10,7 +10,6 @@ const routes = require('./routes/v1');
 const { errorConverter, errorHandler } = require('./middlewares/error');
 const ApiError = require('./utils/ApiError')
 const passport = require('passport');
-//const { jwtStrategy } = require('./config/passport');
 
 require('./strategies');
 require('./services');
@@ -47,7 +46,6 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-
   credentials: true,
 };
 app.use(cors(corsOptions));

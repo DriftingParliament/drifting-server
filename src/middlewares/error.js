@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const httpStatus = require('http-status');
-const config = require('../config/config');
+require("dotenv").config();
 const ApiError = require('../utils/ApiError');
 
 const errorConverter = (err, req, res, next) => {
@@ -21,7 +21,7 @@ const errorHandler = (err, req, res, next) => {
     let { message } = err;
     if(err.statusCode!==undefined) statusCode=err.statusCode
     
-    if (config.env === 'production' && !err.isOperational) {
+    if (process.env.NODE_ENV === 'production' && !err.isOperational) {
         statusCode = httpStatus.INTERNAL_SERVER_ERROR;
         message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
     }
@@ -32,9 +32,9 @@ const errorHandler = (err, req, res, next) => {
         success:false,
         code: statusCode,
         errorMessage:message,
-        ...(config.env === 'development' && { stack: err.stack }),
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     };
-    if (config.env === 'development') {
+    if (process.env.NODE_ENV === 'development') {
         //logger.error(err);
         console.error("Error - ",err);
     }

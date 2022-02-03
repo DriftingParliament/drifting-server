@@ -1,15 +1,20 @@
 const mongoose = require('mongoose');
 const app = require('./app');
-const config = require('./config/config');
-
+//const config = require('./config/config');
+require("dotenv").config();
 
 let server;
-mongoose.connect(config.mongoose.url, config.mongoose.options).then(() => {
-   console.log('Connected to MongoDB');
-    server = app.listen(config.port, () => {
-       console.log(`Listening to port ${config.port}`);
+mongoose
+  .connect(process.env.MONGODB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+    server = app.listen(process.env.PORT, () => {
+      console.log(`Listening to port ${process.env.PORT}`);
     });
-});
+  });
 
 const exitHandler = () => {
     if (server) {
