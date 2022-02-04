@@ -36,7 +36,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET))
 // enable cors
 const whitelist = process.env.WHITELISTED_DOMAINS
   ? process.env.WHITELISTED_DOMAINS.split(",")
-  : ['http://localhost:3000'];
+  : ["http://localhost:3000", "https://drifting-server.herokuapp.com/"];
 
 const corsOptions = {
   origin: function (origin, callback) {
