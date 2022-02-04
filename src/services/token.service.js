@@ -13,7 +13,7 @@ const COOKIE_OPTIONS = {
   signed: true,
   secret:process.env.JWT_SECRET,
   maxAge:60*60*24*30*1000,
-  sameSite:"lax",
+  sameSite:dev?"lax":"none",
 }
 
 // For Expirer Time https://github.com/vercel/ms
