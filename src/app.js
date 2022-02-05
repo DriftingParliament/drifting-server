@@ -36,7 +36,10 @@ app.use(cookieParser(process.env.COOKIE_SECRET))
 // enable cors
 const whitelist = process.env.WHITELISTED_DOMAINS
   ? process.env.WHITELISTED_DOMAINS.split(",")
-  : ["http://localhost:3000", "https://drifting-client.netlify.app/"];
+  : [
+      "http://localhost:3000",
+      "https://drifting-client.netlify.app"
+    ];
 
 const corsOptions = {
   origin: function (origin, callback) {
