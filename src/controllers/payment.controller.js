@@ -13,7 +13,7 @@ const stripe = Stripe(process.env.STRIPE_API_KEY);
 // [ ] - Get payment for that specfic teacher only
 const getAll = catchAsync(async (req, res, next) => {
   try {
-    console.log("req.user",req.user)
+   // console.log("req.user",req.user)
     const {user} = req
     let roleID = user.role.toString().toLowerCase().concat("ID") ;
      paymentIntents = await Payment.find({ [roleID]: user._id });
@@ -149,7 +149,7 @@ const paymentStatus = catchAsync(async (req, res, next) => {
     const response = await stripe.paymentIntents.retrieve(
       req.params.paymentIntent
     );
-    console.log("response", response.charges.data[0].status);
+    //console.log("response", response.charges.data[0].status);
     return res.status(httpStatus.OK).send(response);
   } catch (error) {
     return next(new ApiError(error.statusCode, error.message));

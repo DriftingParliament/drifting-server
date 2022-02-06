@@ -23,7 +23,7 @@ const jwtVerify = async (payload, done) => {
         done(error, false);
     }
 };
-console.log("TOKEN", ExtractJwt.fromAuthHeaderAsBearerToken());
+//console.log("TOKEN", ExtractJwt.fromAuthHeaderAsBearerToken());
 const jwtStrategy = new JwtStrategy(jwtOptions, jwtVerify);
 
 module.exports = {

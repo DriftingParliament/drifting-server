@@ -14,7 +14,7 @@ const register = catchAsync(async (req, res,next) => {
        res.cookie("refreshToken",response.refreshToken,COOKIE_OPTIONS)
        return res.status(httpStatus.OK).send({success:true,token:response.token})
     } catch (error) {
-        console.log('resister',error.message)
+    //    console.log('resister',error.message)
         next(new ApiError(error.statusCode, error.message));
     }
 });
@@ -24,7 +24,7 @@ const login = catchAsync(async (req, res,next) => {
     try {
 
        const response = await authService.passportAuthenticationPromise(req,res)
-       console.log("Loging User ")
+      // console.log("Loging User ")
        return res.status(httpStatus.OK).send({...response})
     } catch (error) {
         next(new ApiError(error.statusCode, error.message));
@@ -37,9 +37,9 @@ const logout = catchAsync(async (req, res,next) => {
     const { refreshToken } = signedCookies   
     const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
     const userId = payload._id
-    console.log("user,",refreshToken)
+    //console.log("user,",refreshToken)
     const response = await authService.logout(userId,refreshToken)
-       console.log("res",response);
+      // console.log("res",response);
         res.clearCookie("refreshToken", COOKIE_OPTIONS)
        return res.status(httpStatus.OK).send({success:true,...response})
     } catch (error) {
@@ -50,12 +50,12 @@ const logout = catchAsync(async (req, res,next) => {
 const refreshTokens = catchAsync(async (req, res,next) => {
      const { signedCookies = {} } = req
      const { refreshToken } = signedCookies
-     console.log('signedCookies',signedCookies)
-     console.log('refreshToken',refreshToken)
+    /*  console.log('signedCookies',signedCookies)
+     console.log('refreshToken',refreshToken) */
      if(refreshToken){
         try {
             const response = await authService.refreshAuth(refreshToken)
-           console.log("Refreshing TOken")
+         //  console.log("Refreshing TOken")
             res.cookie("refreshToken", response.newRefreshToken, COOKIE_OPTIONS)
             return res.status(httpStatus.OK).send({success:true,token:response.accessToken,role:response.userData.role})
             }
@@ -81,18 +81,18 @@ const resetPassword = catchAsync(async (req, res) => {
       req.body.newPassword
     );
         
-        console.log("respos",response)
+     //   console.log("respos",response)
    res.status(httpStatus.OK).send({success:true,response})
 });
 
 const profileUpdate=catchAsync(async(req,res,next)=>{
-    console.log("uid",req.params.id)
-    console.log("datta",req.body)
+  /*   console.log("uid",req.params.id)
+    console.log("datta",req.body) */
     const userID=req.params.id
     const newData=req.body
     
     const response=await authService.profileUpdate(userID,newData)
-    console.log("respos",response)
+    //console.log("respos",response)
 
 return  res.status(httpStatus.OK).send(response);
 })

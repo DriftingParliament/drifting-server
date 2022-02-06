@@ -1,8 +1,7 @@
 const router = require("express").Router()
 const { appointment } = require("../../controllers");
-const validate = require('../../middlewares/validate');
-const { verifyUser, verifyZoomToken,generateZoomToken } = require("../../services/token.service");
-const {appointmentValidation} = require('../../validations');
+
+const { verifyUser, verifyZoomToken } = require("../../services/token.service");
 
 //router.post("/", validate(appointmentValidation.create),verifyUser,verifyZoomToken, appointment.createAppointment)
 router.post("/", verifyUser,verifyZoomToken, appointment.createAppointment)
@@ -20,6 +19,6 @@ router.get("/data", verifyUser, appointment.appointmentStats);
 /* router.post("/signature", validate(appointmentValidation.signature),verifyUser, appointment.signature) */
 
 //Temp
-router.get("/generateZoomToken",verifyUser, generateZoomToken)
+//router.get("/generateZoomToken",verifyUser, generateZoomToken)
 
 module.exports = router

@@ -11,13 +11,13 @@ const zoomHeaders={
     } 
 const createAppointment = async(appointmentData,user,zoomMeetID,paymentID,next) =>{
     return new Promise(async(resolve,reject)=>{
-console.log("Creating Appointment")
+//console.log("Creating Appointment")
         const saveData ={
             teacherID:user._id,
             meetID:zoomMeetID,
             ...appointmentData
         }
-        console.log("saveData",saveData)
+       // console.log("saveData",saveData)
         try {
             const newAppointment = await Appointment.create(saveData)
             
@@ -42,42 +42,6 @@ const patchAppointment = async(appointmentID,updateData) =>{
     })
 }
 
-const getDates=(viewName,currentDate)=>{
-    var curr = new Date(currentDate);
-   /*  console.log("currentDate",currentDate)
-    console.log("getUTCDate", curr.getUTCDate());
-    console.log("getUTCDay", curr.getUTCDay()+1); */
-    var firstday;
-    var lastday;
-    var x;
-    var y;
-    
-    switch (viewName) {
-        case 'Week':
-              var first = curr.getUTCDate() - (curr.getUTCDay()); 
-                var last = first + 6; 
-                console.log("first", first);
-                console.log("last", last);
-                x = new Date(curr.setDate(first));
-                y = new Date(curr.setDate(last));
-                
-            break;
-        case 'Month':
-                x=  new Date(curr.getUTCFullYear(), curr.getUTCMonth(), 1);
-               y = new Date(curr.getUTCFullYear(), curr.getUTCMonth() + 1, 0);
-             
-            break;
-    
-        default:
-            x=new Date(currentDate)
-            y = new Date(currentDate);
-            break;
-    }
-    firstday = new Date(x.setHours(0, 0, 1, 01)).toUTCString();
-    lastday = new Date(y.setHours(23, 59, 59, 999)).toUTCString();
-  
-    return {firstday,lastday}
-}
 const getAppointment = async(viewName="Week",currentDate,userID,userRole="STUDENT" )=>{
     return new Promise(async(resolve,reject)=>{
         try {
@@ -93,8 +57,8 @@ const getAppointment = async(viewName="Week",currentDate,userID,userRole="STUDEN
               .utcOffset(LOCAL_OFFSET)
               .endOf(viewName.toLocaleLowerCase())
               .local();
-            console.log("firstday", firstday);
-            console.log("lastday", lastday);
+           /*  console.log("firstday", firstday);
+            console.log("lastday", lastday); */
             const appointmentData = await Appointment.find({
               startDate: { $gte: firstday },
               endDate: { $lte: lastday },
@@ -112,8 +76,8 @@ const getAppointment = async(viewName="Week",currentDate,userID,userRole="STUDEN
             })}
             else if(userRole=="STUDENT"){
                 appointmentData.map(item=>{
-                    console.log('item.studentID.length',item.studentID.length)
-                    console.log('item.meetLimit',item.meetLimit)
+                   /*  console.log('item.studentID.length',item.studentID.length)
+                    console.log('item.meetLimit',item.meetLimit) */
                   item['readOnly']= item.studentID.length>= item.meetLimit ? true :false  
                 return item
                 })
@@ -230,14 +194,14 @@ const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
                     }
                     
                 } catch (error) {
-                    console.log("error",error.message)
+                //    console.log("error",error.message)
                     nonRefundedStudent.push(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}`)            
                     throw(`Refund failed for ${appointmentData.studentID[key].name} - ${error.message}   `)
                     
                  }
                  
                 }))
-                console.log("nonRefundedStudent",nonRefundedStudent)
+               // console.log("nonRefundedStudent",nonRefundedStudent)
                 /* console.log("refundSuccessCount",refundSuccessCount)
                 console.log("REfund Map",refund.map(promise => promise)); */
                 if(refundSuccessCount>0){
