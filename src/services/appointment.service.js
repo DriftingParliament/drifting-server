@@ -163,7 +163,6 @@ const zoomDelete=async(appointmentData,zoomToken,nonRefundedStudent=[])=>{
 }
 
 const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
-     console.log('appointmentData',appointmentData)
      try{ 
          
          let refundSuccessCount=0
@@ -181,13 +180,12 @@ const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
                             payment_intent: payment.id,
                             amount: process.env.PAYMENT_AMOUNT,
                     });
-                   // console.log('refundStatus',refundStatus)
+                 
                     if(refundStatus.status==='succeeded') {
                         refundSuccessCount+=1
                         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
                         const{studentID,_id}=await Payment.findByIdAndUpdate(payment._id,{refunded:true,...paymentIntent},{new:true})
-                        //const{studentID,_id}= await Payment.findByIdAndUpdate(payment._id,{refunded:true})
-                        // console.log("Payment",studentID,_id)
+                     
                         const appresp = await Appointment.findByIdAndUpdate(appointmentData._id,{$pull:{"studentID":studentID,"paymentID":_id}})
                         //console.log("appresp",appresp)
                         return(refundStatus)
@@ -201,9 +199,7 @@ const deleteAppointment=async(appointmentData,zoomToken,stripe,next)=>{
                  }
                  
                 }))
-               // console.log("nonRefundedStudent",nonRefundedStudent)
-                /* console.log("refundSuccessCount",refundSuccessCount)
-                console.log("REfund Map",refund.map(promise => promise)); */
+           
                 if(refundSuccessCount>0){
                      return  await zoomDelete(appointmentData,zoomToken,nonRefundedStudent)
                      
