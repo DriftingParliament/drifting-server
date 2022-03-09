@@ -61,6 +61,31 @@ const studentUpdate = catchAsync(async(req,res,next) =>{
         return next(new ApiError(error.statusCode, error.message));
     }
 })
+const studentUpdateNoPayment = catchAsync(async(req,res,next) =>{
+    try {
+        const {appointmentData,studentID}=req.body
+        if(studentID===undefined|| studentID===null){
+            return next(new ApiError(httpStatus.REQUEST_TIMEOUT, "Time expired. Please retry"));
+          }
+          if(appointmentData.price >=1){
+          return next(new ApiError(httpStatus.NOT_ACCEPTABLE, "Amount for the meet should be 0"));
+          
+        }
+            console.log("appointmentData",appointmentData)
+            console.log("studentID",studentID)
+           
+            const appointment = await Appointment.findOneAndUpdate({_id:appointmentData._id},{$push:{studentID:studentID}})
+            //const appointment = await Appointment.findOne({_id:appointmentData._id})
+            //console.log("paymentData",paymentData)
+            console.log("appointment",appointment)
+            return res.status(httpStatus.OK).send({success:true})
+
+        
+
+    } catch (error) {
+        return next(new ApiError(error.statusCode, error.message));
+    }
+})
 
 const getAppointment = catchAsync(async(req,res,next) =>{
     try {
@@ -258,4 +283,5 @@ module.exports = {
   patchAppointment,
   deleteAppointment,
   studentUpdate,
+  studentUpdateNoPayment,
 };

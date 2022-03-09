@@ -7,6 +7,7 @@ const { verifyUser, verifyZoomToken } = require("../../services/token.service");
 router.post("/", verifyUser,verifyZoomToken, appointment.createAppointment)
 router.get("/",verifyUser, appointment.getAppointment)
 router.post("/studentUpdate", verifyUser, appointment.studentUpdate)
+router.post("/studentUpdateNP", verifyUser, appointment.studentUpdateNoPayment)
 router.delete("/:id",verifyUser,verifyZoomToken, appointment.deleteAppointment)
 router.patch("/:id",verifyUser, appointment.patchAppointment)
 router.get("/getUserByRole/:role",verifyUser, appointment.getUserByRole)

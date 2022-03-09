@@ -7,6 +7,7 @@ const appointmentSchema= Schema({
     studentID:[{type: Schema.Types.ObjectId, ref: 'User'}], 
     paymentID:[{type: Schema.Types.ObjectId, ref: 'Payment'}], 
     meetLimit:{type:Number,default:8},
+    price:{type:Number,default:0},
     title:String,
     notes:String,
     startDate:Date,

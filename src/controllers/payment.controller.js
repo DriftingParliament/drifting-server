@@ -40,12 +40,14 @@ const createPaymentIntent = catchAsync(async (req, res, next) => {
     endDate,
     meetLimit,
     meetID,
+    price,
     teacherID
   } = req.body.appointmentData;
   // console.log(req.body);
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: process.env.PAYMENT_AMOUNT,
+      //amount: process.env.PAYMENT_AMOUNT,
+      amount:price*100,
       currency: "cad",
       payment_method_types: ["card"],
       /* automatic_payment_methods: {
