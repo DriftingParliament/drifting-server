@@ -38,7 +38,8 @@ const whitelist = process.env.WHITELISTED_DOMAINS
   ? process.env.WHITELISTED_DOMAINS.split(",")
   : [
       "http://localhost:3000",
-      "https://drifting-client.netlify.app"
+      "https://drifting-client.netlify.app",
+      "https://drifting-server-6oyc9.ondigitalocean.app",
     ];
 
 const corsOptions = {
